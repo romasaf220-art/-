@@ -1,82 +1,18 @@
 <!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gnome Kingdom</title>
-    <style>
-        body { margin: 0; background: #1a1c29; color: #fff; font-family: sans-serif; display: flex; flex-direction: column; height: 100vh; }
-        .header { padding: 20px; text-align: center; background: #111; }
-        .gold { font-size: 2em; color: #ffd700; font-weight: bold; }
-        .view { flex: 1; position: relative; border-bottom: 2px solid #333; overflow: hidden; }
-        .ground { position: absolute; bottom: 0; width: 100%; height: 30%; background: #2d4a22; }
-        .castle { position: absolute; bottom: 25%; left: 50%; transform: translateX(-50%); width: 60px; height: 80px; background: #555; transition: 0.5s; }
-        .roof { position: absolute; top: -30px; left: -10px; border-left: 40px solid transparent; border-right: 40px solid transparent; border-bottom: 30px solid #8b4513; }
-        .gnome { position: absolute; bottom: 30%; width: 15px; height: 25px; background: #ff6b6b; border-radius: 5px; animation: jump 0.5s infinite alternate; }
-        @keyframes jump { to { transform: translateY(-5px); } }
-        .shop { height: 40%; background: #000; padding: 10px; overflow-y: auto; }
-        .btn { background: #222; border: 1px solid #444; color: #fff; padding: 15px; margin-bottom: 10px; width: 100%; text-align: left; border-radius: 8px; cursor: pointer; }
-        .btn:active { background: #333; }
-    </style>
-</head>
-<body>
-    <div class="header">
-        <div class="gold">💰 <span id="g">0</span></div>
-        <div>Гномов: <span id="n">0</span> | Доход: <span id="s">0</span>/сек</div>
-    </div>
-    <div class="view">
-        <div class="ground"></div>
-        <div class="castle" id="c"><div class="roof"></div></div>
-        <div id="gc"></div>
-    </div>
-    <div class="shop" id="sh"></div>
+<html>
+<body style="background:black; color:white; font-size:40px; text-align:center;">
 
-    <script>
-        let gold = 0;
-        let gnomes = 0;
-        let gps = 0;
-        let cost = 10;
+<div id="score">0</div>
+<button onclick="clickMe()" style="font-size:30px; padding:20px;">ЖМИ СЮДА</button>
 
-        function update() {
-            document.getElementById('g').innerText = Math.floor(gold);
-            document.getElementById('n').innerText = gnomes;
-            document.getElementById('s').innerText = gps;
-            
-            // Рисуем гномов
-            const container = document.getElementById('gc');
-            container.innerHTML = '';
-            for(let i=0; i<Math.min(gnomes, 15); i++) {
-                let d = document.createElement('div');
-                d.className = 'gnome';
-                d.style.left = (10 + Math.random()*80) + '%';
-                container.appendChild(d);
-            }
-            
-            // Растим замок
-            document.getElementById('c').style.height = (80 + gnomes*2) + 'px';
+<script>
+let count = 0;
 
-            // Кнопка магазина
-            const shop = document.getElementById('sh');
-            shop.innerHTML = `<div class="btn" onclick="buy()">Нанять гнома (Цена: ${Math.floor(cost)}💰)</div>`;
-        }
+function clickMe() {
+    count++;
+    document.getElementById('score').innerText = count;
+}
+</script>
 
-        function buy() {
-            if(gold >= cost) {
-                gold -= cost;
-                gnomes++;
-                gps += 1;
-                cost *= 1.15;
-                update();
-            }
-        }
-
-        // Таймер золота
-        setInterval(() => {
-            gold += gps / 10;
-            update();
-        }, 100);
-
-        update();
-    </script>
 </body>
 </html>
