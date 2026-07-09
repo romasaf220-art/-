@@ -1,64 +1,16 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gnome Kingdom</title>
-    <style>
-        body { margin: 0; background: #1a1c29; color: white; font-family: sans-serif; text-align: center; padding-top: 50px; }
-        h1 { font-size: 3em; color: #ffd700; margin: 0; }
-        p { font-size: 1.2em; color: #aaa; }
-        button { 
-            background: #2ecc71; border: none; color: white; 
-            padding: 20px 40px; font-size: 1.5em; border-radius: 15px; 
-            margin-top: 30px; cursor: pointer; box-shadow: 0 5px 0 #27ae60;
-        }
-        button:active { transform: translateY(5px); box-shadow: none; }
-        .gnomes { font-size: 2em; margin-top: 50px; letter-spacing: 5px; }
-    </style>
-</head>
-<body>
+<html>
+<body style="background:#333; color:white; font-family:Arial; text-align:center; padding-top:50px;">
 
-    <h1>💰 <span id="gold">0</span></h1>
-    <p>Доход: <span id="gps">0</span> / сек</p>
-    
-    <button onclick="hireGnome()">Нанять гнома (<span id="cost">10</span>💰)</button>
-    
-    <div class="gnomes" id="army"></div>
+<h1 id="score">0</h1>
+<button onclick="add()" style="font-size:24px; padding:15px;">КЛИКНИ МЕНЯ</button>
 
-    <script>
-        let gold = 0;
-        let gnomes = 0;
-        let cost = 10;
-
-        function hireGnome() {
-            if (gold >= cost) {
-                gold -= cost;
-                gnomes++;
-                cost = Math.floor(cost * 1.15); // Цена растет
-                update();
-            }
-        }
-
-        // Автоматическое начисление золота каждую секунду
-        setInterval(function() {
-            gold += gnomes;
-            update();
-        }, 1000);
-
-        function update() {
-            document.getElementById('gold').innerText = gold;
-            document.getElementById('gps').innerText = gnomes;
-            document.getElementById('cost').innerText = cost;
-            
-            // Рисуем армию смайликами
-            let armyText = "";
-            for(let i = 0; i < gnomes; i++) {
-                armyText += "👷‍♂️";
-            }
-            document.getElementById('army').innerText = armyText;
-        }
-    </script>
+<script>
+var n = 0;
+function add() {
+    n = n + 1;
+    document.getElementById('score').innerText = n;
+}
+</script>
 
 </body>
 </html>
