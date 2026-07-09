@@ -2,141 +2,81 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Gnome Kingdom Idle</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gnome Kingdom</title>
     <style>
-        body { margin: 0; background: #1a1c29; color: #fff; font-family: sans-serif; touch-action: manipulation; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
-        .header { padding: 20px; text-align: center; background: rgba(0,0,0,0.3); }
-        .gold-display { font-size: 2em; font-weight: bold; color: #ffd700; }
-        .kingdom-view { flex: 1; position: relative; border-bottom: 2px solid #333; }
-        .ground { position: absolute; bottom: 0; width: 100%; height: 40%; background: linear-gradient(to top, #2d4a22, #1a1c29); }
-        .building { position: absolute; bottom: 30%; left: 50%; transform: translateX(-50%); width: 60px; height: 80px; background: #555; border-radius: 10px 10px 0 0; transition: height 0.5s; }
+        body { margin: 0; background: #1a1c29; color: #fff; font-family: sans-serif; display: flex; flex-direction: column; height: 100vh; }
+        .header { padding: 20px; text-align: center; background: #111; }
+        .gold { font-size: 2em; color: #ffd700; font-weight: bold; }
+        .view { flex: 1; position: relative; border-bottom: 2px solid #333; overflow: hidden; }
+        .ground { position: absolute; bottom: 0; width: 100%; height: 30%; background: #2d4a22; }
+        .castle { position: absolute; bottom: 25%; left: 50%; transform: translateX(-50%); width: 60px; height: 80px; background: #555; transition: 0.5s; }
         .roof { position: absolute; top: -30px; left: -10px; border-left: 40px solid transparent; border-right: 40px solid transparent; border-bottom: 30px solid #8b4513; }
-        .gnome { position: absolute; bottom: 35%; width: 20px; height: 30px; background: #ff6b6b; border-radius: 10px 10px 0 0; animation: work 0.5s infinite alternate; }
-        .gnome::after { content: ''; position: absolute; top: -10px; left: 2px; width: 16px; height: 16px; background: #fff; border-radius: 50%; }
-        @keyframes work { from { transform: translateY(0); } to { transform: translateY(-5px); } }
-        .upgrade-menu { height: 40%; overflow-y: auto; padding: 15px; background: #111; }
-        .upgrade-btn { width: 100%; padding: 15px; margin-bottom: 10px; background: #222; border: 1px solid #444; border-radius: 10px; color: #fff; display: flex; justify-content: space-between; cursor: pointer; }
-        .upgrade-btn:active { background: #333; }
-        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); display: flex; align-items: center; justify-content: center; z-index: 100; opacity: 0; pointer-events: none; transition: 0.3s; }
-        .modal.active { opacity: 1; pointer-events: all; }
-        .modal-content { background: #222; padding: 30px; border-radius: 20px; text-align: center; border: 2px solid #ffd700; }
-        .modal button { background: #ffd700; color: #000; border: none; padding: 15px 40px; font-size: 1.2em; font-weight: bold; border-radius: 50px; margin-top: 20px; }
+        .gnome { position: absolute; bottom: 30%; width: 15px; height: 25px; background: #ff6b6b; border-radius: 5px; animation: jump 0.5s infinite alternate; }
+        @keyframes jump { to { transform: translateY(-5px); } }
+        .shop { height: 40%; background: #000; padding: 10px; overflow-y: auto; }
+        .btn { background: #222; border: 1px solid #444; color: #fff; padding: 15px; margin-bottom: 10px; width: 100%; text-align: left; border-radius: 8px; cursor: pointer; }
+        .btn:active { background: #333; }
     </style>
 </head>
 <body>
     <div class="header">
-        <div class="gold-display">💰 <span id="gold">0</span></div>
-        <div style="font-size: 0.9em; color: #aaa;">Гномов: <span id="gnomes">0</span> | Доход: <span id="gps">0</span>/сек</div>
+        <div class="gold">💰 <span id="g">0</span></div>
+        <div>Гномов: <span id="n">0</span> | Доход: <span id="s">0</span>/сек</div>
     </div>
-    <div class="kingdom-view">
+    <div class="view">
         <div class="ground"></div>
-        <div class="building" id="castle"><div class="roof"></div></div>
-        <div id="gnome-container"></div>
+        <div class="castle" id="c"><div class="roof"></div></div>
+        <div id="gc"></div>
     </div>
-    <div class="upgrade-menu" id="shop"></div>
-
-    <div class="modal" id="offline-modal">
-        <div class="modal-content">
-            <h2>Пока тебя не было...</h2>
-            <p>Гномы заработали: <br><span style="color:#ffd700; font-size:1.5em;">+<span id="offline-gold">0</span> 💰</span></p>
-            <button onclick="closeModal()">ЗАБРАТЬ</button>
-        </div>
-    </div>
+    <div class="shop" id="sh"></div>
 
     <script>
-        // --- ДАННЫЕ ИГРЫ ---
-        let game = { gold: 0, gnomes: 0, gps: 0, lastSaveTime: Date.now() };
-        let upgrades = [
-            { id: 'hire', name: 'Нанять гнома', cost: 10, count: 0, gps: 1 },
-            { id: 'pick', name: 'Кирка +1', cost: 100, count: 0, bonus: 1 }
-        ];
+        let gold = 0;
+        let gnomes = 0;
+        let gps = 0;
+        let cost = 10;
 
-        // --- ФУНКЦИИ ---
-        function calculateGPS() {
-            game.gps = game.gnomes * 1;
-            const pick = upgrades.find(u => u.id === 'pick');
-            if(pick) game.gps += pick.count * pick.bonus * game.gnomes;
-        }
-
-        function updateUI() {
-            document.getElementById('gold').innerText = Math.floor(game.gold);
-            document.getElementById('gnomes').innerText = game.gnomes;
-            document.getElementById('gps').innerText = game.gps;
+        function update() {
+            document.getElementById('g').innerText = Math.floor(gold);
+            document.getElementById('n').innerText = gnomes;
+            document.getElementById('s').innerText = gps;
             
-            // Растем замок
-            document.getElementById('castle').style.height = (80 + game.gnomes * 2) + 'px';
-            
-            // Гномы на экране
-            const container = document.getElementById('gnome-container');
-            while(container.children.length < Math.min(game.gnomes, 20)) {
-                const g = document.createElement('div');
-                g.className = 'gnome';
-                g.style.left = (20 + Math.random() * 60) + '%';
-                container.appendChild(g);
+            // Рисуем гномов
+            const container = document.getElementById('gc');
+            container.innerHTML = '';
+            for(let i=0; i<Math.min(gnomes, 15); i++) {
+                let d = document.createElement('div');
+                d.className = 'gnome';
+                d.style.left = (10 + Math.random()*80) + '%';
+                container.appendChild(d);
             }
+            
+            // Растим замок
+            document.getElementById('c').style.height = (80 + gnomes*2) + 'px';
 
-            // Обновляем кнопки
-            const shop = document.getElementById('shop');
-            shop.innerHTML = '';
-            upgrades.forEach((u, i) => {
-                const btn = document.createElement('div');
-                btn.className = 'upgrade-btn';
-                btn.innerHTML = `<div><b>${u.name}</b> (Ур.${u.count})</div><div style="color:#ffd700">${Math.floor(u.cost)}💰</div>`;
-                if(game.gold >= u.cost) {
-                    btn.onclick = () => buyUpgrade(i);
-                } else {
-                    btn.style.opacity = '0.5';
-                }
-                shop.appendChild(btn);
-            });
+            // Кнопка магазина
+            const shop = document.getElementById('sh');
+            shop.innerHTML = `<div class="btn" onclick="buy()">Нанять гнома (Цена: ${Math.floor(cost)}💰)</div>`;
         }
 
-        function buyUpgrade(index) {
-            const u = upgrades[index];
-            if(game.gold >= u.cost) {
-                game.gold -= u.cost;
-                u.count++;
-                u.cost *= 1.15; // Цена растет
-                if(u.id === 'hire') game.gnomes++;
-                calculateGPS();
-                updateUI();
+        function buy() {
+            if(gold >= cost) {
+                gold -= cost;
+                gnomes++;
+                gps += 1;
+                cost *= 1.15;
+                update();
             }
         }
 
-        function closeModal() {
-            document.getElementById('offline-modal').classList.remove('active');
-        }
+        // Таймер золота
+        setInterval(() => {
+            gold += gps / 10;
+            update();
+        }, 100);
 
-        // --- ЗАПУСК ---
-        function init() {
-            // Простая проверка офлайна (без localStorage для надежности)
-            const now = Date.now();
-            const seconds = (now - game.lastSaveTime) / 1000;
-            calculateGPS();
-            const earned = Math.floor(seconds * game.gps);
-            
-            if(earned > 0) {
-                game.gold += earned;
-                document.getElementById('offline-gold').innerText = earned;
-                document.getElementById('offline-modal').classList.add('active');
-            }
-            
-            updateUI();
-            
-            // Игровой цикл
-            setInterval(() => {
-                if(game.gps > 0) {
-                    game.gold += game.gps / 10;
-                    updateUI();
-                }
-            }, 100);
-            
-            // Сохранение времени выхода
-            window.onbeforeunload = () => { game.lastSaveTime = Date.now(); };
-        }
-
-        init();
+        update();
     </script>
 </body>
 </html>
