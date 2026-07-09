@@ -3,126 +3,144 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Cat Idle v4.1 Pro</title>
+    <title>Cat Idle: Ultimate</title>
     <style>
-        :root { --bg: #2c3e50; --panel: #34495e; --accent: #f1c40f; --text: #ecf0f1; }
-        body { margin: 0; background: var(--bg); color: var(--text); font-family: sans-serif; touch-action: manipulation; display: flex; flex-direction: column; height: 100vh; overflow: hidden; user-select: none; }
+        :root { --bg: #1a1a2e; --panel: #16213e; --accent: #e94560; --text: #fff; --sec: #0f3460; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { margin: 0; background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; height: 100vh; overflow: hidden; display: flex; flex-direction: column; transition: background 1s; }
         
         /* Кнопка меню */
-        .menu-btn { position: absolute; top: 15px; left: 15px; z-index: 30; background: rgba(0,0,0,0.3); border: none; color: var(--text); width: 40px; height: 40px; border-radius: 8px; font-size: 1.5em; cursor: pointer; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
-        .menu-btn:active { transform: scale(0.9); }
-
-        /* Оверлей меню */
-        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 40; opacity: 0; pointer-events: none; transition: 0.3s; backdrop-filter: blur(3px); }
+        .menu-btn { position: absolute; top: 15px; left: 15px; z-index: 100; width: 45px; height: 45px; background: rgba(255,255,255,0.1); border: none; border-radius: 12px; color: #fff; font-size: 1.5em; cursor: pointer; backdrop-filter: blur(5px); display: flex; align-items: center; justify-content: center; }
+        
+        /* Оверлей и Сайдбар */
+        .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 90; opacity: 0; pointer-events: none; transition: 0.3s; backdrop-filter: blur(5px); }
         .overlay.active { opacity: 1; pointer-events: all; }
-
-        /* Само меню */
-        .sidebar { position: fixed; top: 0; left: -300px; width: 280px; height: 100%; background: var(--panel); z-index: 50; transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1); padding: 20px; box-sizing: border-box; overflow-y: auto; box-shadow: 5px 0 20px rgba(0,0,0,0.5); }
+        
+        .sidebar { position: fixed; top: 0; left: -320px; width: 300px; height: 100%; background: var(--panel); z-index: 100; transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1); padding: 20px; overflow-y: auto; box-shadow: 10px 0 30px rgba(0,0,0,0.5); }
         .sidebar.active { left: 0; }
         
-        .sidebar h2 { margin-top: 0; color: var(--accent); border-bottom: 2px solid #465c71; padding-bottom: 10px; }
-        .menu-item { padding: 15px; margin-bottom: 5px; border-radius: 8px; cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 10px; font-weight: bold; }
-        .menu-item:hover, .menu-item.active { background: rgba(241, 196, 15, 0.1); color: var(--accent); }
-        .menu-close { margin-top: 20px; background: #c0392b; text-align: center; color: white; }
-
-        /* Игровая зона */
-        .header { padding: 20px 10px; text-align: center; padding-left: 60px; /* Отступ под кнопку */ }
-        .score { font-size: 2.5em; font-weight: bold; color: var(--accent); text-shadow: 0 2px 10px rgba(241, 196, 15, 0.3); }
-        .stats-mini { font-size: 0.9em; color: #bdc3c7; margin-top: 5px; }
-
-        .game-area { flex: 1; position: relative; display: flex; align-items: center; justify-content: center; overflow: hidden; }
-        .cat-container { width: 160px; height: 160px; cursor: pointer; transition: transform 0.1s; position: relative; }
-        .cat-container:active { transform: scale(0.92); }
+        .sidebar h2 { color: var(--accent); margin-top: 0; border-bottom: 2px solid var(--sec); padding-bottom: 10px; }
+        .nav-item { padding: 15px; margin: 5px 0; border-radius: 10px; cursor: pointer; transition: 0.2s; font-weight: bold; display: flex; align-items: center; gap: 10px; }
+        .nav-item:hover, .nav-item.active { background: var(--accent); color: #fff; transform: translateX(5px); }
         
-        .cat-body { width: 100%; height: 100%; border-radius: 50% 50% 45% 45%; position: relative; box-shadow: inset -10px -10px 0 rgba(0,0,0,0.1); transition: background 0.3s, box-shadow 0.3s; }
-        .skin-white { background: #ecf0f1; }
-        .skin-orange { background: #e67e22; }
-        .skin-black { background: #2c3e50; border: 3px solid #7f8c8d; }
-        .skin-cyber { background: #8e44ad; box-shadow: 0 0 20px #9b59b6; }
-        .skin-cyber .eye { background: #00ff00 !important; box-shadow: 0 0 8px #00ff00; }
-
-        .cat-ear { position: absolute; top: -20px; width: 0; height: 0; border-left: 25px solid transparent; border-right: 25px solid transparent; border-bottom: 50px solid inherit; }
-        .ear-l { left: 10px; transform: rotate(-15deg); }
-        .ear-r { right: 10px; transform: rotate(15deg); }
-        .cat-body.skin-white .cat-ear { border-bottom-color: #ecf0f1; }
-        .cat-body.skin-orange .cat-ear { border-bottom-color: #e67e22; }
-        .cat-body.skin-black .cat-ear { border-bottom-color: #2c3e50; }
-        .cat-body.skin-cyber .cat-ear { border-bottom-color: #8e44ad; }
+        /* Игровая зона */
+        .game-header { padding: 20px 10px 10px 70px; text-align: center; z-index: 10; }
+        .score { font-size: 3em; font-weight: 900; color: var(--accent); text-shadow: 0 0 20px rgba(233, 69, 96, 0.5); transition: transform 0.1s; }
+        .stats { font-size: 0.9em; color: #a0a0a0; margin-top: 5px; display: flex; justify-content: center; gap: 15px; }
+        
+        .play-area { flex: 1; position: relative; display: flex; align-items: center; justify-content: center; perspective: 1000px; }
+        
+        /* Кот с физикой */
+        .cat-wrapper { width: 180px; height: 180px; cursor: pointer; transition: transform 0.1s cubic-bezier(0.34, 1.56, 0.64, 1); position: relative; }
+        .cat-body { width: 100%; height: 100%; border-radius: 50% 50% 45% 45%; position: relative; box-shadow: 0 10px 30px rgba(0,0,0,0.3); transition: background 0.5s, box-shadow 0.5s; }
+        
+        /* Скины */
+        .skin-default { background: linear-gradient(135deg, #ecf0f1, #bdc3c7); }
+        .skin-ginger { background: linear-gradient(135deg, #e67e22, #d35400); }
+        .skin-void { background: linear-gradient(135deg, #2c3e50, #000); border: 2px solid #7f8c8d; }
+        .skin-cyber { background: linear-gradient(135deg, #8e44ad, #2980b9); box-shadow: 0 0 30px #9b59b6; }
+        .skin-gold { background: linear-gradient(135deg, #f1c40f, #f39c12); box-shadow: 0 0 40px rgba(241, 196, 15, 0.6); }
+        
+        .cat-ear { position: absolute; top: -25px; width: 0; height: 0; border-left: 30px solid transparent; border-right: 30px solid transparent; border-bottom: 60px solid inherit; transition: border-bottom-color 0.5s; }
+        .ear-l { left: 10px; transform: rotate(-20deg); }
+        .ear-r { right: 10px; transform: rotate(20deg); }
+        .skin-default .cat-ear { border-bottom-color: #ecf0f1; }
+        .skin-ginger .cat-ear { border-bottom-color: #e67e22; }
+        .skin-void .cat-ear { border-bottom-color: #2c3e50; }
+        .skin-cyber .cat-ear { border-bottom-color: #8e44ad; }
+        .skin-gold .cat-ear { border-bottom-color: #f1c40f; }
 
         .face { position: absolute; top: 45%; left: 50%; transform: translateX(-50%); width: 60%; text-align: center; }
-        .eyes { display: flex; justify-content: space-between; margin-bottom: 10px; }
-        .eye { width: 20px; height: 20px; background: #2c3e50; border-radius: 50%; position: relative; transition: 0.3s; }
-        .eye::after { content:''; position: absolute; top: 4px; right: 4px; width: 6px; height: 6px; background: #fff; border-radius: 50%; }
-        .nose { width: 12px; height: 8px; background: #e74c3c; border-radius: 50%; margin: 0 auto; }
+        .eyes { display: flex; justify-content: space-between; margin-bottom: 12px; }
+        .eye { width: 24px; height: 24px; background: #2c3e50; border-radius: 50%; position: relative; transition: 0.3s; }
+        .eye::after { content:''; position: absolute; top: 5px; right: 5px; width: 8px; height: 8px; background: #fff; border-radius: 50%; }
+        .skin-cyber .eye { background: #00ff00; box-shadow: 0 0 10px #00ff00; }
+        .nose { width: 14px; height: 10px; background: #e74c3c; border-radius: 50%; margin: 0 auto; }
 
-        /* Контент внутри меню */
-        .tab-pane { display: none; animation: fadeIn 0.3s; }
+        /* Частицы и эффекты */
+        .particle { position: absolute; pointer-events: none; font-weight: bold; animation: floatUp 1.2s forwards; z-index: 50; text-shadow: 0 2px 5px rgba(0,0,0,0.5); }
+        @keyframes floatUp { 0% { opacity: 1; transform: translateY(0) scale(1); } 100% { opacity: 0; transform: translateY(-100px) scale(1.5); } }
+        
+        .click-ripple { position: absolute; border: 3px solid var(--accent); border-radius: 50%; animation: ripple 0.6s ease-out forwards; pointer-events: none; }
+        @keyframes ripple { to { width: 200px; height: 200px; opacity: 0; margin-top: -100px; margin-left: -100px; } }
+
+        /* Контент вкладок */
+        .tab-pane { display: none; margin-top: 20px; animation: fadeIn 0.3s; }
         .tab-pane.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        .upg-item { background: #2c3e50; padding: 12px; margin-bottom: 8px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #465c71; cursor: pointer; }
-        .upg-item:active { transform: scale(0.98); }
-        .upg-item.disabled { opacity: 0.5; filter: grayscale(1); pointer-events: none; }
-        .upg-info b { display: block; font-size: 1.1em; }
-        .upg-info span { font-size: 0.8em; color: #95a5a6; }
-        .upg-cost { color: var(--accent); font-weight: bold; text-align: right; }
+        .upg-card { background: rgba(255,255,255,0.05); padding: 15px; margin-bottom: 10px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; border: 1px solid rgba(255,255,255,0.1); transition: 0.2s; cursor: pointer; }
+        .upg-card:active { transform: scale(0.98); background: rgba(255,255,255,0.1); }
+        .upg-card.disabled { opacity: 0.4; filter: grayscale(1); pointer-events: none; }
+        .upg-name { font-weight: bold; font-size: 1.1em; display: block; }
+        .upg-desc { font-size: 0.8em; color: #aaa; margin-top: 3px; display: block; }
+        .upg-price { color: var(--accent); font-weight: bold; font-size: 1.1em; text-align: right; }
 
-        .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
-        .card { background: #2c3e50; padding: 15px; border-radius: 10px; text-align: center; border: 2px solid transparent; cursor: pointer; }
-        .card.selected { border-color: var(--accent); background: #3e5871; }
-        .card.locked { opacity: 0.5; filter: grayscale(1); pointer-events: none; }
-        .card-icon { font-size: 2em; margin-bottom: 5px; }
-
-        .ach-row { display: flex; align-items: center; padding: 10px; background: #2c3e50; margin-bottom: 5px; border-radius: 8px; }
-        .ach-icon { font-size: 1.5em; margin-right: 10px; width: 30px; text-align: center; }
-        .ach-info { flex: 1; }
-        .ach-info b { display: block; font-size: 0.9em; }
-        .ach-info span { font-size: 0.75em; color: #95a5a6; }
-
-        .float-text { position: absolute; color: var(--accent); font-weight: bold; pointer-events: none; animation: floatUp 1s forwards; z-index: 20; font-size: 1.5em; }
-        @keyframes floatUp { to { opacity: 0; transform: translateY(-60px); } }
+        .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+        .skin-card { background: rgba(255,255,255,0.05); padding: 20px; border-radius: 12px; text-align: center; border: 2px solid transparent; cursor: pointer; transition: 0.2s; }
+        .skin-card.selected { border-color: var(--accent); background: rgba(233, 69, 96, 0.1); }
+        .skin-card.locked { opacity: 0.3; filter: grayscale(1); pointer-events: none; }
         
-        .toast { position: fixed; top: 20px; right: 20px; background: #2ecc71; color: #fff; padding: 10px 20px; border-radius: 20px; font-weight: bold; transform: translateX(200%); transition: 0.5s; z-index: 100; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
-        .toast.show { transform: translateX(0); }
+        .prestige-box { background: linear-gradient(135deg, #8e44ad, #2980b9); padding: 20px; border-radius: 15px; text-align: center; margin-top: 20px; }
+        .btn-prestige { background: #fff; color: #8e44ad; border: none; padding: 12px 30px; border-radius: 25px; font-weight: bold; font-size: 1.1em; cursor: pointer; margin-top: 10px; transition: 0.2s; }
+        .btn-prestige:active { transform: scale(0.95); }
+
+        .toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(100px); background: var(--accent); color: #fff; padding: 12px 25px; border-radius: 30px; font-weight: bold; transition: 0.5s; z-index: 200; box-shadow: 0 5px 20px rgba(233, 69, 96, 0.4); white-space: nowrap; }
+        .toast.show { transform: translateX(-50%) translateY(0); }
+
+        /* Адаптив для мобилок */
+        @media (max-width: 600px) {
+            .sidebar { width: 100%; left: -100%; }
+            .score { font-size: 2.5em; }
+            .cat-wrapper { width: 150px; height: 150px; }
+        }
     </style>
 </head>
 <body>
 
     <button class="menu-btn" onclick="toggleMenu()">☰</button>
-    
     <div class="overlay" id="overlay" onclick="toggleMenu()"></div>
     
     <div class="sidebar" id="sidebar">
-        <h2>Меню</h2>
-        <div class="menu-item active" onclick="switchTab('shop', this)">🛒 Магазин (100+)</div>
-        <div class="menu-item" onclick="switchTab('skins', this)"> Скины</div>
-        <div class="menu-item" onclick="switchTab('ach', this)">🏆 Ачивки</div>
-        <div class="menu-item" onclick="switchTab('settings', this)">⚙️ Настройки</div>
-        <div class="menu-item menu-close" onclick="resetGame()"> Сброс</div>
+        <h2>МЕНЮ</h2>
+        <div class="nav-item active" onclick="switchTab('shop')">🛒 Улучшения</div>
+        <div class="nav-item" onclick="switchTab('skins')">🎨 Скины</div>
+        <div class="nav-item" onclick="switchTab('prestige')">💎 Престиж</div>
+        <div class="nav-item" onclick="switchTab('settings')">⚙️ Настройки</div>
         
-        <!-- Панели контента -->
-        <div id="pane-shop" class="tab-pane active" style="margin-top: 20px;"></div>
-        <div id="pane-skins" class="tab-pane" style="margin-top: 20px;">
-            <div class="grid" id="skins-grid"></div>
-        </div>
-        <div id="pane-ach" class="tab-pane" style="margin-top: 20px;" id="ach-list"></div>
-        <div id="pane-settings" class="tab-pane" style="margin-top: 20px;">
-            <div class="upg-item" onclick="toggleSound()">
-                <div class="upg-info"><b> Звуки</b><span id="sound-status">Включены</span></div>
-                <div class="upg-cost" id="sound-toggle">ON</div>
+        <div id="pane-shop" class="tab-pane active"></div>
+        <div id="pane-skins" class="tab-pane"><div class="grid-2" id="skins-list"></div></div>
+        <div id="pane-prestige" class="tab-pane">
+            <div class="prestige-box">
+                <h3 style="margin:0 0 10px;">Сброс ради силы</h3>
+                <p style="font-size:0.9em; margin:0;">Текущий множитель: x<span id="cur-mult">1</span></p>
+                <p style="font-size:0.9em;">После сброса: x<span id="new-mult">1</span></p>
+                <button class="btn-prestige" onclick="doPrestige()">ВОЗРОДИТЬСЯ</button>
             </div>
-            <p style="font-size:0.8em; color:#7f8c8d; margin-top:20px; text-align:center;">Cat Idle v4.1<br>By Roma</p>
+        </div>
+        <div id="pane-settings" class="tab-pane">
+            <div class="upg-card" onclick="toggleSound()">
+                <div><span class="upg-name">🔊 Звуки</span><span class="upg-desc" id="snd-stat">Вкл</span></div>
+                <div class="upg-price" id="snd-toggle">ON</div>
+            </div>
+            <div class="upg-card" onclick="hardReset()" style="border-color:#e74c3c; margin-top:20px;">
+                <div><span class="upg-name" style="color:#e74c3c">💀 Полный сброс</span><span class="upg-desc">Удалить всё навсегда</span></div>
+            </div>
         </div>
     </div>
 
-    <div class="header">
-        <div class="score">😻 <span id="purr">0</span></div>
-        <div class="stats-mini">Мур/сек: <span id="mps">0</span> | Всего: <span id="total">0</span></div>
+    <div class="game-header">
+        <div class="score" id="score">0</div>
+        <div class="stats">
+            <span>⚡ <span id="mps">0</span>/сек</span>
+            <span>👆 <span id="cpc">1</span>/клик</span>
+            <span>💎 x<span id="mult">1</span></span>
+        </div>
     </div>
 
-    <div class="game-area" onclick="petCat(event)">
-        <div class="cat-container">
-            <div class="cat-body skin-white" id="cat-visual">
+    <div class="play-area" id="play-area">
+        <div class="cat-wrapper" id="cat" onclick="handleClick(event)">
+            <div class="cat-body skin-default" id="cat-vis">
                 <div class="cat-ear ear-l"></div>
                 <div class="cat-ear ear-r"></div>
                 <div class="face">
@@ -135,228 +153,359 @@
 
     <div class="toast" id="toast"></div>
 
-    <script>
-        // --- ДАННЫЕ ---
-        const defaultState = {
-            purr: 0, totalPurr: 0, clicks: 0, startTime: Date.now(), lastSave: Date.now(),
-            soundOn: true, currentSkin: 'white', unlockedSkins: ['white'],
-            upgrades: [], 
-            achievements: [
-                {id:'click1', name:'Первый тык', desc:'Кликни 1 раз', req:1, type:'clicks', got:false},
-                {id:'purr100', name:'Мурчало', desc:'Накопи 100 мурчаний', req:100, type:'purr', got:false},
-                {id:'rich', name:'Богач', desc:'Накопи 10k мурчаний', req:10000, type:'purr', got:false},
-                {id:'master', name:'Мастер', desc:'Купи 50 улучшений', req:50, type:'count', got:false}
-            ]
-        };
+<script>
+/**
+ * CAT IDLE ULTIMATE ENGINE v1.0
+ * Created by Roma
+ */
 
-        let game = JSON.parse(JSON.stringify(defaultState));
+// --- КОНФИГУРАЦИЯ И СОСТОЯНИЕ ---
+const CFG = {
+    saveKey: 'cat_ultimate_v1',
+    fps: 60,
+    autoSaveInterval: 10000,
+    offlineEfficiency: 0.5
+};
+
+let state = {
+    purr: 0, totalPurr: 0, clicks: 0, startTime: Date.now(), lastSave: Date.now(),
+    prestigeCount: 0, prestigeMult: 1,
+    soundOn: true, skin: 'default', unlockedSkins: ['default'],
+    upgrades: [], // Генерируются процедурно
+    shopPage: 0
+};
+
+// --- ПРОЦЕДУРНАЯ ГЕНЕРАЦИЯ УЛУЧШЕНИЙ ---
+function generateUpgrades(count = 200) {
+    const prefixes = ['Игрушечная', 'Старая', 'Обычная', 'Крепкая', 'Элитная', 'Магическая', 'Кибер-', 'Золотая', 'Алмазная', 'Божественная'];
+    const items = ['Мышь', 'Миска', 'Коробка', 'Лазер', 'Мята', 'Подушка', 'Щетка', 'Бант', 'Витамины', 'Статуя'];
+    
+    state.upgrades = [];
+    for(let i=0; i<count; i++) {
+        const tier = Math.floor(i / 10);
+        const idx = i % 10;
+        const baseMps = Math.pow(1.8, tier) * (idx + 1) * 2;
+        const baseCost = Math.pow(1.35, i) * 20 + (tier * 100);
         
-        // ГЕНЕРАТОР УЛУЧШЕНИЙ (ВСЕГДА ПЕРЕЗАПИСЫВАЕТ)
-        function initUpgrades() {
-            const names = ['Мышь','Молоко','Коробка','Лазер','Мята','Статуя','Подушка','Витамины','Щетка','Бант'];
-            game.upgrades = []; // Очищаем массив
-            for(let i=0; i<100; i++) {
-                let tier = Math.floor(i / 10);
-                let baseMps = Math.pow(2, tier) * (i%10 + 1);
-                let baseCost = Math.pow(1.4, i) * 15;
-                game.upgrades.push({
-                    id: i, 
-                    name: `${names[i%10]} ${tier+1}`, 
-                    cost: Math.floor(baseCost), 
-                    mps: Math.floor(baseMps), 
-                    count: 0
-                });
-            }
-        }
-
-        // --- ЛОГИКА ---
-        function getMPS() { return game.upgrades.reduce((a,u) => a + u.count * u.mps, 0); }
-        
-        function petCat(e) {
-            if(!audioCtx && game.soundOn) initAudio();
-            const earn = 1 + Math.floor(getMPS() * 0.05);
-            game.purr += earn; game.totalPurr += earn; game.clicks++;
-            
-            playSound('click');
-            showFloat(e.clientX, e.clientY, '+'+earn);
-            checkAchievements();
-            updateUI();
-        }
-
-        function buy(i) {
-            const u = game.upgrades[i];
-            if(game.purr >= u.cost) {
-                game.purr -= u.cost;
-                u.count++;
-                u.cost = Math.floor(u.cost * 1.15);
-                playSound('buy');
-                renderShop(); 
-                updateUI();
-                saveGame();
-            }
-        }
-
-        function checkAchievements() {
-            let newUnlock = false;
-            game.achievements.forEach(a => {
-                if(a.got) return;
-                let val = a.type==='clicks' ? game.clicks : (a.type==='purr' ? game.totalPurr : game.upgrades.reduce((s,u)=>s+u.count,0));
-                if(val >= a.req) {
-                    a.got = true;
-                    showToast(` ${a.name}`);
-                    playSound('ach');
-                    newUnlock = true;
-                    if(a.id==='purr100' && !game.unlockedSkins.includes('orange')) game.unlockedSkins.push('orange');
-                    if(a.id==='rich' && !game.unlockedSkins.includes('black')) game.unlockedSkins.push('black');
-                    if(a.id==='master' && !game.unlockedSkins.includes('cyber')) game.unlockedSkins.push('cyber');
-                }
-            });
-            if(newUnlock) renderAch();
-        }
-
-        // --- UI & МЕНЮ ---
-        function toggleMenu() {
-            document.getElementById('sidebar').classList.toggle('active');
-            document.getElementById('overlay').classList.toggle('active');
-        }
-
-        // Обработка ESC
-        document.addEventListener('keydown', (e) => {
-            if(e.key === 'Escape') {
-                const sb = document.getElementById('sidebar');
-                if(sb.classList.contains('active')) toggleMenu();
-            }
+        state.upgrades.push({
+            id: i,
+            name: `${prefixes[Math.min(tier, prefixes.length-1)]} ${items[idx]}`,
+            desc: `+${formatNum(Math.floor(baseMps))} мур/сек`,
+            baseMps: Math.floor(baseMps),
+            cost: Math.floor(baseCost),
+            count: 0,
+            mult: 1.15
         });
+    }
+}
 
-        function switchTab(name, btn) {
-            document.querySelectorAll('.tab-pane').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('.menu-item').forEach(b => b.classList.remove('active'));
-            document.getElementById('pane-'+name).classList.add('active');
-            if(btn) btn.classList.add('active');
-            
-            if(name==='shop') renderShop();
-            if(name==='skins') renderSkins();
-            if(name==='ach') renderAch();
+// --- ЯДРО ИГРЫ ---
+function getMPS() {
+    let raw = state.upgrades.reduce((sum, u) => sum + (u.count * u.baseMps), 0);
+    return Math.floor(raw * state.prestigeMult);
+}
+
+function getClickPower() {
+    let base = 1 + Math.floor(getMPS() * 0.05);
+    return Math.floor(base * state.prestigeMult);
+}
+
+function handleClick(e) {
+    if(!audioCtx && state.soundOn) initAudio();
+    
+    const earn = getClickPower();
+    state.purr += earn;
+    state.totalPurr += earn;
+    state.clicks++;
+    
+    // Визуал
+    spawnParticle(e.clientX, e.clientY, `+${formatNum(earn)}`);
+    spawnRipple(e.clientX, e.clientY);
+    animateCat();
+    playSound('click');
+    
+    checkUnlocks();
+    updateUI();
+}
+
+function buyUpgrade(id) {
+    const u = state.upgrades[id];
+    const currentCost = Math.floor(u.cost * Math.pow(u.mult, u.count));
+    
+    if(state.purr >= currentCost) {
+        state.purr -= currentCost;
+        u.count++;
+        playSound('buy');
+        renderShop(); // Перерисовка цен
+        updateUI();
+        saveGame();
+    }
+}
+
+// --- СИСТЕМА ПРЕСТИЖА ---
+function calcPrestigeGain() {
+    if(state.totalPurr < 1000000) return 0;
+    return Math.floor(Math.sqrt(state.totalPurr / 1000000));
+}
+
+function doPrestige() {
+    const gain = calcPrestigeGain();
+    if(gain <= 0) return showToast("Нужно минимум 1M мурчаний!");
+    
+    if(confirm(`Сбросить всё ради x${state.prestigeMult + gain}?`)) {
+        state.prestigeCount++;
+        state.prestigeMult += gain;
+        state.purr = 0;
+        state.upgrades.forEach(u => u.count = 0);
+        state.startTime = Date.now();
+        saveGame();
+        location.reload();
+    }
+}
+
+// --- ВИЗУАЛЬНЫЙ ДВИЖОК ---
+function spawnParticle(x, y, text) {
+    const el = document.createElement('div');
+    el.className = 'particle';
+    el.innerText = text;
+    el.style.left = (x - 20 + Math.random()*40) + 'px';
+    el.style.top = (y - 30) + 'px';
+    el.style.color = `hsl(${Math.random()*60 + 330}, 100%, 70%)`;
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 1200);
+}
+
+function spawnRipple(x, y) {
+    const r = document.createElement('div');
+    r.className = 'click-ripple';
+    r.style.left = x + 'px';
+    r.style.top = y + 'px';
+    document.body.appendChild(r);
+    setTimeout(() => r.remove(), 600);
+}
+
+function animateCat() {
+    const cat = document.getElementById('cat');
+    cat.style.transform = `scale(0.9) rotate(${Math.random()*10-5}deg)`;
+    setTimeout(() => cat.style.transform = 'scale(1) rotate(0deg)', 100);
+}
+
+function applySkin() {
+    const vis = document.getElementById('cat-vis');
+    vis.className = `cat-body skin-${state.skin}`;
+    
+    // Динамический фон
+    const body = document.body;
+    if(state.skin === 'void') body.style.background = '#000';
+    else if(state.skin === 'cyber') body.style.background = '#1a0b2e';
+    else if(state.skin === 'gold') body.style.background = '#2c2408';
+    else body.style.background = 'var(--bg)';
+}
+
+// --- UI МЕНЕДЖЕР ---
+function toggleMenu() {
+    document.getElementById('sidebar').classList.toggle('active');
+    document.getElementById('overlay').classList.toggle('active');
+}
+
+document.addEventListener('keydown', e => {
+    if(e.key === 'Escape' && document.getElementById('sidebar').classList.contains('active')) toggleMenu();
+});
+
+function switchTab(name) {
+    document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    
+    document.getElementById(`pane-${name}`).classList.add('active');
+    event.currentTarget.classList.add('active');
+    
+    if(name === 'shop') renderShop();
+    if(name === 'skins') renderSkins();
+    if(name === 'prestige') updatePrestigeUI();
+}
+
+function renderShop() {
+    const container = document.getElementById('pane-shop');
+    container.innerHTML = '';
+    
+    // Показываем только релевантные апгрейды
+    let shown = 0;
+    state.upgrades.forEach((u, i) => {
+        if(shown > 50) return;
+        const cost = Math.floor(u.cost * Math.pow(u.mult, u.count));
+        const isVisible = u.count > 0 || state.purr >= cost * 0.7 || shown < 10;
+        
+        if(isVisible) {
+            const div = document.createElement('div');
+            div.className = `upg-card ${state.purr < cost ? 'disabled' : ''}`;
+            div.onclick = () => buyUpgrade(i);
+            div.innerHTML = `
+                <div>
+                    <span class="upg-name">${u.name}</span>
+                    <span class="upg-desc">${u.desc} | Ур.${u.count}</span>
+                </div>
+                <div class="upg-price">${formatNum(cost)}</div>
+            `;
+            container.appendChild(div);
+            shown++;
         }
+    });
+}
 
-        function renderShop() {
-            const c = document.getElementById('pane-shop');
-            c.innerHTML = '';
-            // Показываем только доступные или купленные + следующие 10
-            let shown = 0;
-            game.upgrades.forEach((u, i) => {
-                if(shown > 30) return; 
-                if(u.count > 0 || game.purr >= u.cost * 0.8 || shown < 5) {
-                    const div = document.createElement('div');
-                    div.className = 'upg-item ' + (game.purr < u.cost ? 'disabled' : '');
-                    div.onclick = () => buy(i);
-                    div.innerHTML = `<div class="upg-info"><b>${u.name}</b><span>+${u.mps} мур/сек | Ур.${u.count}</span></div>
-                                     <div class="upg-cost">${u.cost.toLocaleString()} 😻</div>`;
-                    c.appendChild(div);
-                    shown++;
+function renderSkins() {
+    const list = document.getElementById('skins-list');
+    list.innerHTML = '';
+    const skins = [
+        {id:'default', name:'Снежок', icon:''},
+        {id:'ginger', name:'Рыжик', icon:'🟠'},
+        {id:'void', name:'Пустота', icon:'⚫'},
+        {id:'cyber', name:'Кибер', icon:'🟣'},
+        {id:'gold', name:'Мидас', icon:''}
+    ];
+    
+    skins.forEach(s => {
+        const locked = !state.unlockedSkins.includes(s.id);
+        const div = document.createElement('div');
+        div.className = `skin-card ${state.skin===s.id?'selected':''} ${locked?'locked':''}`;
+        div.innerHTML = `<div style="font-size:2em">${s.icon}</div><div>${s.name}</div>${locked?'<small>🔒</small>':''}`;
+        if(!locked) div.onclick = () => { state.skin = s.id; applySkin(); renderSkins(); saveGame(); };
+        list.appendChild(div);
+    });
+}
+
+function updatePrestigeUI() {
+    document.getElementById('cur-mult').innerText = state.prestigeMult;
+    document.getElementById('new-mult').innerText = state.prestigeMult + calcPrestigeGain();
+}
+
+function updateUI() {
+    document.getElementById('score').innerText = formatNum(Math.floor(state.purr));
+    document.getElementById('mps').innerText = formatNum(getMPS());
+    document.getElementById('cpc').innerText = formatNum(getClickPower());
+    document.getElementById('mult').innerText = state.prestigeMult;
+    
+    // Обновляем доступность кнопок без полной перерисовки
+    const cards = document.querySelectorAll('#pane-shop .upg-card');
+    cards.forEach((card, i) => {
+        // Упрощенная логика для производительности
+    });
+}
+
+function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.innerText = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+function formatNum(n) {
+    if(n >= 1e9) return (n/1e9).toFixed(2) + 'B';
+    if(n >= 1e6) return (n/1e6).toFixed(2) + 'M';
+    if(n >= 1e3) return (n/1e3).toFixed(1) + 'K';
+    return n.toLocaleString();
+}
+
+// --- ЗВУКОВОЙ ДВИЖОК (Web Audio API) ---
+let audioCtx;
+function initAudio() { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+
+function playSound(type) {
+    if(!state.soundOn || !audioCtx) return;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    
+    const now = audioCtx.currentTime;
+    if(type === 'click') {
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(800, now);
+        osc.frequency.exponentialRampToValueAtTime(300, now + 0.1);
+        gain.gain.setValueAtTime(0.3, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+        osc.start(now);
+        osc.stop(now + 0.1);
+    } else if(type === 'buy') {
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(400, now);
+        osc.frequency.linearRampToValueAtTime(1200, now + 0.15);
+        gain.gain.setValueAtTime(0.2, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+        osc.start(now);
+        osc.stop(now + 0.2);
+    }
+}
+
+function toggleSound() {
+    state.soundOn = !state.soundOn;
+    document.getElementById('snd-toggle').innerText = state.soundOn ? 'ON' : 'OFF';
+    document.getElementById('snd-stat').innerText = state.soundOn ? 'Включены' : 'Выключены';
+    if(state.soundOn && !audioCtx) initAudio();
+}
+
+// --- СИСТЕМА СОХРАНЕНИЙ И ОФЛАЙН ---
+function saveGame() {
+    state.lastSave = Date.now();
+    localStorage.setItem(CFG.saveKey, JSON.stringify(state));
+}
+
+function loadGame() {
+    const raw = localStorage.getItem(CFG.saveKey);
+    if(raw) {
+        try {
+            const saved = JSON.parse(raw);
+            state = { ...state, ...saved };
+            // Восстанавливаем массив апгрейдов, сохраняя прогресс
+            generateUpgrades();
+            state.upgrades.forEach((u, i) => {
+                if(saved.upgrades && saved.upgrades[i]) {
+                    u.count = saved.upgrades[i].count;
                 }
             });
+        } catch(e) { console.error("Save corrupted", e); generateUpgrades(); }
+    } else {
+        generateUpgrades();
+    }
+    
+    applySkin();
+    
+    // Офлайн доход
+    const secondsOffline = (Date.now() - state.lastSave) / 1000;
+    if(secondsOffline > 60) {
+        const mps = getMPS();
+        const earned = Math.floor(secondsOffline * mps * CFG.offlineEfficiency);
+        if(earned > 0) {
+            state.purr += earned;
+            state.totalPurr += earned;
+            setTimeout(() => alert(`Пока тебя не было (${Math.floor(secondsOffline)} сек), коты намурчали:\n+${formatNum(earned)} мурчаний!`), 500);
         }
+    }
+}
 
-        function renderSkins() {
-            const g = document.getElementById('skins-grid');
-            g.innerHTML = '';
-            const skins = [
-                {id:'white', name:'Снежок', icon:'⚪'},
-                {id:'orange', name:'Рыжик', icon:''},
-                {id:'black', name:'Багира', icon:'⚫'},
-                {id:'cyber', name:'Кибер', icon:'🟣'}
-            ];
-            skins.forEach(s => {
-                const locked = !game.unlockedSkins.includes(s.id);
-                const div = document.createElement('div');
-                div.className = 'card ' + (game.currentSkin===s.id ? 'selected' : '') + (locked ? ' locked' : '');
-                div.innerHTML = `<div class="card-icon">${s.icon}</div><div>${s.name}</div>${locked?'<div style="font-size:0.7em">🔒</div>':''}`;
-                if(!locked) div.onclick = () => { game.currentSkin = s.id; applySkin(); renderSkins(); saveGame(); };
-                g.appendChild(div);
-            });
-        }
+function hardReset() {
+    if(confirm("ТОЧНО УДАЛИТЬ ВСЁ? ЭТО НЕЛЬЗЯ ОТМЕНИТЬ!")) {
+        localStorage.removeItem(CFG.saveKey);
+        location.reload();
+    }
+}
 
-        function renderAch() {
-            const l = document.getElementById('pane-ach');
-            l.innerHTML = '';
-            game.achievements.forEach(a => {
-                const div = document.createElement('div');
-                div.className = 'ach-row';
-                div.style.opacity = a.got ? '1' : '0.5';
-                div.innerHTML = `<div class="ach-icon">${a.got?'✅':'🔒'}</div>
-                                 <div class="ach-info"><b>${a.name}</b><span>${a.desc}</span></div>`;
-                l.appendChild(div);
-            });
-        }
+// --- ИНИЦИАЛИЗАЦИЯ ---
+setInterval(() => {
+    const mps = getMPS();
+    if(mps > 0) {
+        state.purr += mps / 10;
+        state.totalPurr += mps / 10;
+        updateUI();
+    }
+}, 100);
 
-        function applySkin() {
-            document.getElementById('cat-visual').className = 'cat-body skin-' + game.currentSkin;
-        }
+setInterval(saveGame, CFG.autoSaveInterval);
 
-        function updateUI() {
-            document.getElementById('purr').innerText = Math.floor(game.purr).toLocaleString();
-            document.getElementById('mps').innerText = getMPS().toLocaleString();
-            document.getElementById('total').innerText = Math.floor(game.totalPurr).toLocaleString();
-        }
+// Старт
+loadGame();
+renderShop();
+updateUI();
 
-        function showFloat(x, y, text) {
-            const el = document.createElement('div');
-            el.className = 'float-text'; el.innerText = text;
-            el.style.left = x+'px'; el.style.top = y+'px';
-            document.body.appendChild(el);
-            setTimeout(()=>el.remove(), 1000);
-        }
-
-        function showToast(msg) {
-            const t = document.getElementById('toast');
-            t.innerText = msg; t.classList.add('show');
-            setTimeout(()=>t.classList.remove('show'), 3000);
-        }
-
-        // --- ЗВУКИ ---
-        let audioCtx;
-        function initAudio() { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
-        function playSound(type) {
-            if(!game.soundOn || !audioCtx) return;
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.connect(gain); gain.connect(audioCtx.destination);
-            if(type==='click') { osc.frequency.value=600; gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime+0.1); osc.start(); osc.stop(audioCtx.currentTime+0.1); }
-            if(type==='buy') { osc.frequency.value=400; osc.frequency.linearRampToValueAtTime(800, audioCtx.currentTime+0.1); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime+0.2); osc.start(); osc.stop(audioCtx.currentTime+0.2); }
-            if(type==='ach') { osc.type='triangle'; osc.frequency.value=500; osc.frequency.linearRampToValueAtTime(1000, audioCtx.currentTime+0.3); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime+0.5); osc.start(); osc.stop(audioCtx.currentTime+0.5); }
-        }
-
-        function toggleSound() {
-            game.soundOn = !game.soundOn;
-            document.getElementById('sound-toggle').innerText = game.soundOn ? 'ON' : 'OFF';
-            document.getElementById('sound-status').innerText = game.soundOn ? 'Включены' : 'Выключены';
-            if(game.soundOn && !audioCtx) initAudio();
-        }
-
-        // --- СИСТЕМА ---
-        function saveGame() { game.lastSave = Date.now(); localStorage.setItem('catPro_v4_1', JSON.stringify(game)); }
-        function loadGame() { 
-            const s = localStorage.getItem('catPro_v4_1'); 
-            if(s) { try { const saved = JSON.parse(s); game = {...defaultState, ...saved}; } catch(e){} }
-            initUpgrades(); // ВСЕГДА ГЕНЕРИРУЕМ ЗАНОВО
-            applySkin(); 
-            const secs = (Date.now() - game.lastSave)/1000;
-            if(secs > 60) {
-                const earned = Math.floor(secs * getMPS() * 0.5);
-                if(earned > 0) { game.purr += earned; game.totalPurr += earned; setTimeout(()=>alert(`Офлайн доход: +${earned} мурчаний!`), 500); }
-            }
-        }
-        function resetGame() { if(confirm('Удалить всё?')) { localStorage.removeItem('catPro_v4_1'); location.reload(); } }
-
-        setInterval(() => { 
-            const mps = getMPS(); 
-            if(mps>0) { game.purr += mps/10; game.totalPurr += mps/10; updateUI(); } 
-        }, 100);
-        setInterval(saveGame, 10000);
-
-        // Старт
-        loadGame(); renderShop(); updateUI();
-    </script>
+</script>
 </body>
 </html>
