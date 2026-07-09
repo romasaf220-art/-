@@ -3,19 +3,35 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Cat Idle v4.0 Pro</title>
+    <title>Cat Idle v4.1 Pro</title>
     <style>
         :root { --bg: #2c3e50; --panel: #34495e; --accent: #f1c40f; --text: #ecf0f1; }
         body { margin: 0; background: var(--bg); color: var(--text); font-family: sans-serif; touch-action: manipulation; display: flex; flex-direction: column; height: 100vh; overflow: hidden; user-select: none; }
         
-        /* Верхняя панель */
-        .header { padding: 20px 10px; text-align: center; background: rgba(0,0,0,0.2); z-index: 10; }
+        /* Кнопка меню */
+        .menu-btn { position: absolute; top: 15px; left: 15px; z-index: 30; background: rgba(0,0,0,0.3); border: none; color: var(--text); width: 40px; height: 40px; border-radius: 8px; font-size: 1.5em; cursor: pointer; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
+        .menu-btn:active { transform: scale(0.9); }
+
+        /* Оверлей меню */
+        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 40; opacity: 0; pointer-events: none; transition: 0.3s; backdrop-filter: blur(3px); }
+        .overlay.active { opacity: 1; pointer-events: all; }
+
+        /* Само меню */
+        .sidebar { position: fixed; top: 0; left: -300px; width: 280px; height: 100%; background: var(--panel); z-index: 50; transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1); padding: 20px; box-sizing: border-box; overflow-y: auto; box-shadow: 5px 0 20px rgba(0,0,0,0.5); }
+        .sidebar.active { left: 0; }
+        
+        .sidebar h2 { margin-top: 0; color: var(--accent); border-bottom: 2px solid #465c71; padding-bottom: 10px; }
+        .menu-item { padding: 15px; margin-bottom: 5px; border-radius: 8px; cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 10px; font-weight: bold; }
+        .menu-item:hover, .menu-item.active { background: rgba(241, 196, 15, 0.1); color: var(--accent); }
+        .menu-close { margin-top: 20px; background: #c0392b; text-align: center; color: white; }
+
+        /* Игровая зона */
+        .header { padding: 20px 10px; text-align: center; padding-left: 60px; /* Отступ под кнопку */ }
         .score { font-size: 2.5em; font-weight: bold; color: var(--accent); text-shadow: 0 2px 10px rgba(241, 196, 15, 0.3); }
         .stats-mini { font-size: 0.9em; color: #bdc3c7; margin-top: 5px; }
 
-        /* Игровая зона (только кот) */
         .game-area { flex: 1; position: relative; display: flex; align-items: center; justify-content: center; overflow: hidden; }
-        .cat-container { width: 150px; height: 150px; cursor: pointer; transition: transform 0.1s; position: relative; }
+        .cat-container { width: 160px; height: 160px; cursor: pointer; transition: transform 0.1s; position: relative; }
         .cat-container:active { transform: scale(0.92); }
         
         .cat-body { width: 100%; height: 100%; border-radius: 50% 50% 45% 45%; position: relative; box-shadow: inset -10px -10px 0 rgba(0,0,0,0.1); transition: background 0.3s, box-shadow 0.3s; }
@@ -26,9 +42,8 @@
         .skin-cyber .eye { background: #00ff00 !important; box-shadow: 0 0 8px #00ff00; }
 
         .cat-ear { position: absolute; top: -20px; width: 0; height: 0; border-left: 25px solid transparent; border-right: 25px solid transparent; border-bottom: 50px solid inherit; }
-        .ear-l { left: 10px; transform: rotate(-15deg); border-bottom-color: inherit; }
-        .ear-r { right: 10px; transform: rotate(15deg); border-bottom-color: inherit; }
-        /* Хак для ушей, чтобы они красились вместе с телом */
+        .ear-l { left: 10px; transform: rotate(-15deg); }
+        .ear-r { right: 10px; transform: rotate(15deg); }
         .cat-body.skin-white .cat-ear { border-bottom-color: #ecf0f1; }
         .cat-body.skin-orange .cat-ear { border-bottom-color: #e67e22; }
         .cat-body.skin-black .cat-ear { border-bottom-color: #2c3e50; }
@@ -40,49 +55,65 @@
         .eye::after { content:''; position: absolute; top: 4px; right: 4px; width: 6px; height: 6px; background: #fff; border-radius: 50%; }
         .nose { width: 12px; height: 8px; background: #e74c3c; border-radius: 50%; margin: 0 auto; }
 
-        /* Эффекты */
-        .float-text { position: absolute; color: var(--accent); font-weight: bold; pointer-events: none; animation: floatUp 1s forwards; z-index: 20; font-size: 1.5em; }
-        @keyframes floatUp { to { opacity: 0; transform: translateY(-60px); } }
+        /* Контент внутри меню */
+        .tab-pane { display: none; animation: fadeIn 0.3s; }
+        .tab-pane.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* Нижнее меню */
-        .nav-bar { height: 60px; background: var(--panel); display: flex; border-top: 2px solid #2c3e50; z-index: 20; }
-        .nav-btn { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #7f8c8d; cursor: pointer; transition: 0.2s; font-size: 0.8em; }
-        .nav-btn.active { color: var(--accent); background: rgba(241, 196, 15, 0.1); }
-        .nav-icon { font-size: 1.5em; margin-bottom: 3px; }
-
-        /* Контент вкладок */
-        .tab-content { position: absolute; bottom: 60px; left: 0; width: 100%; height: calc(100% - 60px - 100px); /* Высота экрана минус меню и хедер */
-                       background: var(--panel); overflow-y: auto; padding: 15px; box-sizing: border-box; display: none; z-index: 15; border-top: 2px solid #465c71; }
-        .tab-content.active { display: block; animation: slideUp 0.3s ease-out; }
-        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-
-        /* Элементы магазина */
-        .upg-item { background: #2c3e50; padding: 12px; margin-bottom: 8px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #465c71; }
+        .upg-item { background: #2c3e50; padding: 12px; margin-bottom: 8px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #465c71; cursor: pointer; }
+        .upg-item:active { transform: scale(0.98); }
+        .upg-item.disabled { opacity: 0.5; filter: grayscale(1); pointer-events: none; }
         .upg-info b { display: block; font-size: 1.1em; }
         .upg-info span { font-size: 0.8em; color: #95a5a6; }
         .upg-cost { color: var(--accent); font-weight: bold; text-align: right; }
-        .upg-item.disabled { opacity: 0.5; filter: grayscale(1); }
 
-        /* Скины и Ачивки */
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 10px; }
-        .card { background: #2c3e50; padding: 10px; border-radius: 10px; text-align: center; border: 2px solid transparent; cursor: pointer; }
+        .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+        .card { background: #2c3e50; padding: 15px; border-radius: 10px; text-align: center; border: 2px solid transparent; cursor: pointer; }
         .card.selected { border-color: var(--accent); background: #3e5871; }
         .card.locked { opacity: 0.5; filter: grayscale(1); pointer-events: none; }
         .card-icon { font-size: 2em; margin-bottom: 5px; }
-        
+
         .ach-row { display: flex; align-items: center; padding: 10px; background: #2c3e50; margin-bottom: 5px; border-radius: 8px; }
         .ach-icon { font-size: 1.5em; margin-right: 10px; width: 30px; text-align: center; }
         .ach-info { flex: 1; }
         .ach-info b { display: block; font-size: 0.9em; }
         .ach-info span { font-size: 0.75em; color: #95a5a6; }
-        .ach-check { color: #2ecc71; font-size: 1.2em; }
 
-        /* Уведомления */
+        .float-text { position: absolute; color: var(--accent); font-weight: bold; pointer-events: none; animation: floatUp 1s forwards; z-index: 20; font-size: 1.5em; }
+        @keyframes floatUp { to { opacity: 0; transform: translateY(-60px); } }
+        
         .toast { position: fixed; top: 20px; right: 20px; background: #2ecc71; color: #fff; padding: 10px 20px; border-radius: 20px; font-weight: bold; transform: translateX(200%); transition: 0.5s; z-index: 100; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
         .toast.show { transform: translateX(0); }
     </style>
 </head>
 <body>
+
+    <button class="menu-btn" onclick="toggleMenu()">☰</button>
+    
+    <div class="overlay" id="overlay" onclick="toggleMenu()"></div>
+    
+    <div class="sidebar" id="sidebar">
+        <h2>Меню</h2>
+        <div class="menu-item active" onclick="switchTab('shop', this)">🛒 Магазин (100+)</div>
+        <div class="menu-item" onclick="switchTab('skins', this)"> Скины</div>
+        <div class="menu-item" onclick="switchTab('ach', this)">🏆 Ачивки</div>
+        <div class="menu-item" onclick="switchTab('settings', this)">⚙️ Настройки</div>
+        <div class="menu-item menu-close" onclick="resetGame()"> Сброс</div>
+        
+        <!-- Панели контента -->
+        <div id="pane-shop" class="tab-pane active" style="margin-top: 20px;"></div>
+        <div id="pane-skins" class="tab-pane" style="margin-top: 20px;">
+            <div class="grid" id="skins-grid"></div>
+        </div>
+        <div id="pane-ach" class="tab-pane" style="margin-top: 20px;" id="ach-list"></div>
+        <div id="pane-settings" class="tab-pane" style="margin-top: 20px;">
+            <div class="upg-item" onclick="toggleSound()">
+                <div class="upg-info"><b> Звуки</b><span id="sound-status">Включены</span></div>
+                <div class="upg-cost" id="sound-toggle">ON</div>
+            </div>
+            <p style="font-size:0.8em; color:#7f8c8d; margin-top:20px; text-align:center;">Cat Idle v4.1<br>By Roma</p>
+        </div>
+    </div>
 
     <div class="header">
         <div class="score">😻 <span id="purr">0</span></div>
@@ -102,75 +133,39 @@
         </div>
     </div>
 
-    <!-- Вкладки контента -->
-    <div id="tab-shop" class="tab-content active"></div>
-    
-    <div id="tab-skins" class="tab-content">
-        <h3 style="margin-top:0; color:#bdc3c7;">Выбор скина</h3>
-        <div class="grid" id="skins-grid"></div>
-    </div>
-
-    <div id="tab-ach" class="tab-content">
-        <h3 style="margin-top:0; color:#bdc3c7;">Достижения</h3>
-        <div id="ach-list"></div>
-    </div>
-
-    <div id="tab-settings" class="tab-content">
-        <h3 style="margin-top:0; color:#bdc3c7;">Настройки</h3>
-        <div class="upg-item" onclick="toggleSound()">
-            <div class="upg-info"><b>🔊 Звуки</b><span id="sound-status">Включены</span></div>
-            <div class="upg-cost" id="sound-toggle">ON</div>
-        </div>
-        <div class="upg-item" onclick="resetGame()" style="border-color:#c0392b; margin-top:20px;">
-            <div class="upg-info"><b style="color:#e74c3c"> Сброс прогресса</b><span>Удалить всё навсегда</span></div>
-        </div>
-        <div style="text-align:center; margin-top:30px; color:#7f8c8d; font-size:0.8em;">
-            Cat Idle v4.0 Pro<br>Created by Roma
-        </div>
-    </div>
-
-    <!-- Навигация -->
-    <div class="nav-bar">
-        <div class="nav-btn active" onclick="switchTab('shop', this)"><div class="nav-icon">🛒</div>Магазин</div>
-        <div class="nav-btn" onclick="switchTab('skins', this)"><div class="nav-icon"></div>Скины</div>
-        <div class="nav-btn" onclick="switchTab('ach', this)"><div class="nav-icon"></div>Ачивки</div>
-        <div class="nav-btn" onclick="switchTab('settings', this)"><div class="nav-icon">⚙️</div>Настр.</div>
-    </div>
-
-    <div class="toast" id="toast">Ачивка получена!</div>
+    <div class="toast" id="toast"></div>
 
     <script>
         // --- ДАННЫЕ ---
         const defaultState = {
             purr: 0, totalPurr: 0, clicks: 0, startTime: Date.now(), lastSave: Date.now(),
             soundOn: true, currentSkin: 'white', unlockedSkins: ['white'],
-            upgrades: [], // Будет заполнено генератором
+            upgrades: [], 
             achievements: [
                 {id:'click1', name:'Первый тык', desc:'Кликни 1 раз', req:1, type:'clicks', got:false},
                 {id:'purr100', name:'Мурчало', desc:'Накопи 100 мурчаний', req:100, type:'purr', got:false},
-                {id:'rich', name:'Богач', desc:'Накопи 10,000 мурчаний', req:10000, type:'purr', got:false},
+                {id:'rich', name:'Богач', desc:'Накопи 10k мурчаний', req:10000, type:'purr', got:false},
                 {id:'master', name:'Мастер', desc:'Купи 50 улучшений', req:50, type:'count', got:false}
             ]
         };
 
         let game = JSON.parse(JSON.stringify(defaultState));
         
-        // Генератор 100+ улучшений
+        // ГЕНЕРАТОР УЛУЧШЕНИЙ (ВСЕГДА ПЕРЕЗАПИСЫВАЕТ)
         function initUpgrades() {
-            if(game.upgrades.length === 0) {
-                const names = ['Мышь','Молоко','Коробка','Лазер','Мята','Статуя','Подушка','Витамины','Щетка','Бант'];
-                for(let i=0; i<100; i++) {
-                    let tier = Math.floor(i / 10);
-                    let baseMps = Math.pow(2, tier) * (i%10 + 1);
-                    let baseCost = Math.pow(1.5, i) * 10;
-                    game.upgrades.push({
-                        id: i, 
-                        name: `${names[i%10]} ${tier+1}`, 
-                        cost: Math.floor(baseCost), 
-                        mps: Math.floor(baseMps), 
-                        count: 0
-                    });
-                }
+            const names = ['Мышь','Молоко','Коробка','Лазер','Мята','Статуя','Подушка','Витамины','Щетка','Бант'];
+            game.upgrades = []; // Очищаем массив
+            for(let i=0; i<100; i++) {
+                let tier = Math.floor(i / 10);
+                let baseMps = Math.pow(2, tier) * (i%10 + 1);
+                let baseCost = Math.pow(1.4, i) * 15;
+                game.upgrades.push({
+                    id: i, 
+                    name: `${names[i%10]} ${tier+1}`, 
+                    cost: Math.floor(baseCost), 
+                    mps: Math.floor(baseMps), 
+                    count: 0
+                });
             }
         }
 
@@ -195,7 +190,7 @@
                 u.count++;
                 u.cost = Math.floor(u.cost * 1.15);
                 playSound('buy');
-                renderShop(); // Перерисовка цен
+                renderShop(); 
                 updateUI();
                 saveGame();
             }
@@ -211,7 +206,6 @@
                     showToast(` ${a.name}`);
                     playSound('ach');
                     newUnlock = true;
-                    // Разблокировка скинов за ачивки
                     if(a.id==='purr100' && !game.unlockedSkins.includes('orange')) game.unlockedSkins.push('orange');
                     if(a.id==='rich' && !game.unlockedSkins.includes('black')) game.unlockedSkins.push('black');
                     if(a.id==='master' && !game.unlockedSkins.includes('cyber')) game.unlockedSkins.push('cyber');
@@ -220,24 +214,38 @@
             if(newUnlock) renderAch();
         }
 
-        // --- UI ---
+        // --- UI & МЕНЮ ---
+        function toggleMenu() {
+            document.getElementById('sidebar').classList.toggle('active');
+            document.getElementById('overlay').classList.toggle('active');
+        }
+
+        // Обработка ESC
+        document.addEventListener('keydown', (e) => {
+            if(e.key === 'Escape') {
+                const sb = document.getElementById('sidebar');
+                if(sb.classList.contains('active')) toggleMenu();
+            }
+        });
+
         function switchTab(name, btn) {
-            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-            document.getElementById('tab-'+name).classList.add('active');
-            btn.classList.add('active');
+            document.querySelectorAll('.tab-pane').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.menu-item').forEach(b => b.classList.remove('active'));
+            document.getElementById('pane-'+name).classList.add('active');
+            if(btn) btn.classList.add('active');
+            
             if(name==='shop') renderShop();
             if(name==='skins') renderSkins();
             if(name==='ach') renderAch();
         }
 
         function renderShop() {
-            const c = document.getElementById('tab-shop');
+            const c = document.getElementById('pane-shop');
             c.innerHTML = '';
-            // Показываем только доступные или купленные + следующие 5
+            // Показываем только доступные или купленные + следующие 10
             let shown = 0;
             game.upgrades.forEach((u, i) => {
-                if(shown > 20) return; // Оптимизация рендера
+                if(shown > 30) return; 
                 if(u.count > 0 || game.purr >= u.cost * 0.8 || shown < 5) {
                     const div = document.createElement('div');
                     div.className = 'upg-item ' + (game.purr < u.cost ? 'disabled' : '');
@@ -254,8 +262,8 @@
             const g = document.getElementById('skins-grid');
             g.innerHTML = '';
             const skins = [
-                {id:'white', name:'Снежок', icon:''},
-                {id:'orange', name:'Рыжик', icon:'🟠'},
+                {id:'white', name:'Снежок', icon:'⚪'},
+                {id:'orange', name:'Рыжик', icon:''},
                 {id:'black', name:'Багира', icon:'⚫'},
                 {id:'cyber', name:'Кибер', icon:'🟣'}
             ];
@@ -270,7 +278,7 @@
         }
 
         function renderAch() {
-            const l = document.getElementById('ach-list');
+            const l = document.getElementById('pane-ach');
             l.innerHTML = '';
             game.achievements.forEach(a => {
                 const div = document.createElement('div');
@@ -283,19 +291,13 @@
         }
 
         function applySkin() {
-            const cat = document.getElementById('cat-visual');
-            cat.className = 'cat-body skin-' + game.currentSkin;
+            document.getElementById('cat-visual').className = 'cat-body skin-' + game.currentSkin;
         }
 
         function updateUI() {
             document.getElementById('purr').innerText = Math.floor(game.purr).toLocaleString();
             document.getElementById('mps').innerText = getMPS().toLocaleString();
             document.getElementById('total').innerText = Math.floor(game.totalPurr).toLocaleString();
-            
-            // Обновляем доступность в магазине без полной перерисовки
-            document.querySelectorAll('#tab-shop .upg-item').forEach((el, i) => {
-                // Это упрощенная логика, для идеала лучше хранить индексы
-            });
         }
 
         function showFloat(x, y, text) {
@@ -312,7 +314,7 @@
             setTimeout(()=>t.classList.remove('show'), 3000);
         }
 
-        // --- ЗВУКИ (Web Audio API) ---
+        // --- ЗВУКИ ---
         let audioCtx;
         function initAudio() { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
         function playSound(type) {
@@ -320,7 +322,6 @@
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
             osc.connect(gain); gain.connect(audioCtx.destination);
-            
             if(type==='click') { osc.frequency.value=600; gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime+0.1); osc.start(); osc.stop(audioCtx.currentTime+0.1); }
             if(type==='buy') { osc.frequency.value=400; osc.frequency.linearRampToValueAtTime(800, audioCtx.currentTime+0.1); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime+0.2); osc.start(); osc.stop(audioCtx.currentTime+0.2); }
             if(type==='ach') { osc.type='triangle'; osc.frequency.value=500; osc.frequency.linearRampToValueAtTime(1000, audioCtx.currentTime+0.3); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime+0.5); osc.start(); osc.stop(audioCtx.currentTime+0.5); }
@@ -334,19 +335,19 @@
         }
 
         // --- СИСТЕМА ---
-        function saveGame() { game.lastSave = Date.now(); localStorage.setItem('catPro_v4', JSON.stringify(game)); }
+        function saveGame() { game.lastSave = Date.now(); localStorage.setItem('catPro_v4_1', JSON.stringify(game)); }
         function loadGame() { 
-            const s = localStorage.getItem('catPro_v4'); 
-            if(s) { try { game = {...defaultState, ...JSON.parse(s)}; } catch(e){} }
-            initUpgrades(); applySkin(); 
-            // Офлайн доход
+            const s = localStorage.getItem('catPro_v4_1'); 
+            if(s) { try { const saved = JSON.parse(s); game = {...defaultState, ...saved}; } catch(e){} }
+            initUpgrades(); // ВСЕГДА ГЕНЕРИРУЕМ ЗАНОВО
+            applySkin(); 
             const secs = (Date.now() - game.lastSave)/1000;
             if(secs > 60) {
                 const earned = Math.floor(secs * getMPS() * 0.5);
-                if(earned > 0) { game.purr += earned; game.totalPurr += earned; setTimeout(()=>alert(`Пока тебя не было, кот намурчал: ${earned}!`), 500); }
+                if(earned > 0) { game.purr += earned; game.totalPurr += earned; setTimeout(()=>alert(`Офлайн доход: +${earned} мурчаний!`), 500); }
             }
         }
-        function resetGame() { if(confirm('Точно удалить всё?')) { localStorage.removeItem('catPro_v4'); location.reload(); } }
+        function resetGame() { if(confirm('Удалить всё?')) { localStorage.removeItem('catPro_v4_1'); location.reload(); } }
 
         setInterval(() => { 
             const mps = getMPS(); 
